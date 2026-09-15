@@ -1,9 +1,8 @@
 /*
- * nX engine FXLK / KLX asset extractor. No third-party dependencies.
- * The FXLK reader was reconstructed from FreeStyle (2000) and is compatible
- * with Couloir 14's three KLX containers. The inherited LTP3 mode remains
- * available for the earlier external-table variant.
- * See documentation/klx-format.md for evidence and limitations.
+ * nX/X3 engine asset extractor. No third-party dependencies.
+ * The FXLK reader was reconstructed from FreeStyle (2000). External-table
+ * modes support the earlier LTP3 (1999) data file and Dash (1999) GCR file.
+ * See documentation/dash-container-format.md for evidence and limitations.
  *
  * cmake -S . -B build -G "Visual Studio 17 2022" -A x64
  * cmake --build build --config Release
@@ -11,6 +10,8 @@
  * bin\klx_unpack.exe --list archive.klx
  * bin\klx_unpack.exe --ltp3-exe LTP3.exe data new-output-directory
  * bin\klx_unpack.exe --list --ltp3-exe LTP3.exe data
+ * bin\klx_unpack.exe --dash-exe Dash.exe Dash.GCR new-output-directory
+ * bin\klx_unpack.exe --list --dash-exe Dash.exe Dash.GCR
  */
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
@@ -50,6 +51,8 @@
 #define Q4 0x20000u
 #define LTP3_TABLE_RVA 0x00027030u
 #define LTP3_ENTRY_COUNT 157u
+#define DASH_TABLE_RVA 0x00017030u
+#define DASH_ENTRY_COUNT 98u
 
 enum StorageMethod {
     METHOD_XOR_9A,
@@ -571,11 +574,12 @@ static int pe_map_rva(const PeImage *pe, uint32_t rva,
     return 0;
 }
 
-static int parse_ltp3_archive(const unsigned char *data, size_t size,
-                              const unsigned char *exe, size_t exe_size,
-                              Entry **result, size_t *count)
+static int parse_external_archive(const unsigned char *data, size_t size,
+                                  const unsigned char *exe, size_t exe_size,
+                                  uint32_t table_rva, size_t entry_count,
+                                  const char *path_prefix, const char *format_name,
+                                  Entry **result, size_t *count)
 {
-    static const char path_prefix[] = "D:/Devellop/LTP3-Iinvit/";
     PeImage pe;
     Entry *entries = NULL;
     size_t offset = 0, total = 0, i;
@@ -586,18 +590,18 @@ static int parse_ltp3_archive(const unsigned char *data, size_t size,
         fprintf(stderr, "error: invalid 32-bit PE metadata executable\n");
         return 0;
     }
-    entries = (Entry *)calloc(LTP3_ENTRY_COUNT, sizeof(*entries));
+    entries = (Entry *)calloc(entry_count, sizeof(*entries));
     if (!entries) {
         fprintf(stderr, "error: out of memory\n");
         return 0;
     }
-    for (i = 0; i < LTP3_ENTRY_COUNT; ++i) {
+    for (i = 0; i < entry_count; ++i) {
         const unsigned char *record, *name_data, *end;
         size_t record_available, name_available, length;
         uint32_t name_va, compressed, record_size, name_rva;
         Entry *e = &entries[i];
         *count = i + 1;
-        if (!pe_map_rva(&pe, LTP3_TABLE_RVA + (uint32_t)i * 12u,
+        if (!pe_map_rva(&pe, table_rva + (uint32_t)i * 12u,
                         &record, &record_available) || record_available < 12) goto done;
         name_va = le32(record);
         compressed = le32(record + 4);
@@ -612,7 +616,7 @@ static int parse_ltp3_archive(const unsigned char *data, size_t size,
         if (length > 4096) goto done;
         e->name = (char *)allocate(length + 1);
         memcpy(e->name, name_data, length + 1);
-        if (strncmp(e->name, path_prefix, sizeof(path_prefix) - 1)) goto done;
+        if (strncmp(e->name, path_prefix, strlen(path_prefix))) goto done;
         if (compressed) {
             if (record_size < 4) goto done;
             e->size = le32(data + offset);
@@ -634,7 +638,7 @@ static int parse_ltp3_archive(const unsigned char *data, size_t size,
     ok = 1;
 done:
     if (!ok) {
-        fprintf(stderr, "error: LTP3 metadata table or data file is inconsistent\n");
+        fprintf(stderr, "error: %s metadata table or archive is inconsistent\n", format_name);
         free_entries(entries, *count);
         *count = 0;
     } else {
@@ -695,17 +699,24 @@ static int run(int argc, char **argv)
     unsigned char *data, *metadata = NULL;
     Entry *entries = NULL;
     size_t size = 0, metadata_size = 0, count = 0, i;
-    int arg = 1, positional = 0, list = 0, ok;
+    int arg = 1, positional = 0, list = 0, metadata_mode = 0, ok;
     while (arg < argc) {
         if (!strcmp(argv[arg], "--help") || !strcmp(argv[arg], "-h")) {
             printf("Usage: klx_unpack [--list] archive.klx [new-output-directory]\n"
                    "       klx_unpack [--list] --ltp3-exe LTP3.exe data [new-output-directory]\n"
-                   "nX FXLK / LTP3 LZARI extractor. No external libraries. Limit: 256 MiB.\n");
+                   "       klx_unpack [--list] --dash-exe Dash.exe Dash.GCR [new-output-directory]\n"
+                   "nX/X3 FXLK and external-table LZARI extractor. Limit: 256 MiB.\n");
             return 0;
         } else if (!strcmp(argv[arg], "--list")) {
             list = 1;
             ++arg;
-        } else if (!strcmp(argv[arg], "--ltp3-exe") && arg + 1 < argc) {
+        } else if ((!strcmp(argv[arg], "--ltp3-exe") ||
+                    !strcmp(argv[arg], "--dash-exe")) && arg + 1 < argc) {
+            if (metadata_path) {
+                fprintf(stderr, "error: choose only one metadata executable mode\n");
+                return 1;
+            }
+            metadata_mode = !strcmp(argv[arg], "--dash-exe") ? 2 : 1;
             metadata_path = argv[arg + 1];
             arg += 2;
         } else if (argv[arg][0] == '-') {
@@ -724,7 +735,8 @@ static int run(int argc, char **argv)
     }
     if (!archive || (list ? output != NULL : output == NULL)) {
         fprintf(stderr, "Usage: klx_unpack [--list] archive.klx [new-output-directory]\n"
-                        "       klx_unpack [--list] --ltp3-exe LTP3.exe data [new-output-directory]\n");
+                        "       klx_unpack [--list] --ltp3-exe LTP3.exe data [new-output-directory]\n"
+                        "       klx_unpack [--list] --dash-exe Dash.exe Dash.GCR [new-output-directory]\n");
         return 1;
     }
     data = read_file(archive, &size);
@@ -732,11 +744,20 @@ static int run(int argc, char **argv)
     if (metadata_path) {
         metadata = read_file(metadata_path, &metadata_size);
         if (!metadata) {
-            fprintf(stderr, "error: could not read LTP3 metadata executable: %s\n", metadata_path);
+            fprintf(stderr, "error: could not read metadata executable: %s\n", metadata_path);
             free(data);
             return 1;
         }
-        ok = parse_ltp3_archive(data, size, metadata, metadata_size, &entries, &count);
+        if (metadata_mode == 2) {
+            ok = parse_external_archive(data, size, metadata, metadata_size,
+                                        DASH_TABLE_RVA, DASH_ENTRY_COUNT,
+                                        "D:/vrac/", "Dash", &entries, &count);
+        } else {
+            ok = parse_external_archive(data, size, metadata, metadata_size,
+                                        LTP3_TABLE_RVA, LTP3_ENTRY_COUNT,
+                                        "D:/Devellop/LTP3-Iinvit/", "LTP3",
+                                        &entries, &count);
+        }
     } else {
         ok = parse_archive(data, size, &entries, &count);
     }

@@ -1,0 +1,87 @@
+
+					d . A . S . h
+					[-=-=-=-=-=-]
+
+			       - t w o   y e a r s   a f t e r -
+
+
+
+			     Released in 1999 at Volcanic Party #5			
+
+
+					 Credits:
+					 [------]
+
+			      System, 2D code by No Recess
+		Graphics, 3D code and add system implementation by xBaRr/gOds
+				    Soundtrack by Liszt
+
+		     a "YOU SAVED US!" to Odin/gOds for the file packer!
+		Thanks to Irium for relooking the good-old-classic Amiga font
+
+
+				       Requirements:
+				       [-----------]
+
+	     Clean boot under Microsoft Windows 95/98 with DirectX 6 installed,
+		      Pentium 166 or better, 24 megabytes of memory.
+
+
+				  Some words about DASH:
+				  [--------------------]
+
+		DASH is the first PC production from the CONDENSE demogroup.
+		(CONDENSE was founded by No Recess on Amstrad Cpc in 1995).
+		In fact, this demo was planned to use No Recess's 3d engine
+		but some bugs were still causing problems and we had to make
+		some consequent changes at the last minute.
+			I've to thank a lot xBaRr/gOds for lending me its 
+		speedy 3d engine (X3). Thanks again to Liszt and xBaRr for
+		their precious contributions.
+			DASH has been realised in about a week:
+		X3 and systel code were already coded, but 2D code, 3D scenes
+		and graphics were realised in a quite short delay! (We all
+		have holliday job :) )
+			To conclude, learn that dash is from 'Boulder Dash'
+		and NOT from dash 2-en-1 hehe...
+			(Yes I still finish it using Cpe, arf!).
+
+
+					MemberList:
+					[---------]
+
+		Gozer (22 years old, coder),
+		No Recess (19 years old, coder),
+
+		   WE ARE LOOKING FOR ACTIVE MUSICIANS AND GRAPHICIANS !!!
+
+
+					 Greets:
+					 [-----]
+
+		No Recess:
+
+	Odin, Liszt (thanks for the splendid piece of art ;), Atc, Gozer (Ramelo-Fourure rulez!),
+        Maf, Made, Prozero, Guen, Roudoudou, Arf! Studio, Arrakis, #demofr, One, Syntax Terror, Eliot,
+	Rainbird, Epsilon, Offset, SNN, Zik, Chany, Tom & Jerry, Ramlaid, Greg (what's new?),
+	Siou, Longshot, Nicky One, Mat and all the rest of Cpc scene (It's not soon i'll forget you!;).
+		
+		Xbarr:
+
+	Linko, absolutely ALL the active scene members and especially to Nitrik and Maf.
+
+
+How to contact us:
+
+	[Lizst]
+		liszt@wanadoo.fr
+
+	[No Recess]
+		STORQ Arnaud
+                14 allee des narcisses
+		F83320 CARQUEIRANNE
+		(I'm going to change home,
+		so this adress will be surely outdated in few weeks...)
+
+	[xBaRr]
+		via mIRC on #demofr...

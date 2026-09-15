@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Extract an nX/nXng FXLK archive. Python 3.10+, no dependencies.
 
-The decoder was reconstructed during the FreeStyle preservation effort and is
-also compatible with Couloir 14's three KLX containers. Archive paths such as
-T:\\factory\\isle.lwo become T/factory/isle.lwo below the output directory.
+The LZARI decoder was reconstructed during the FreeStyle preservation effort
+and is reused by the related X3 external-table extractor for Dash. Archive
+drive prefixes are retained as ordinary directories below the output root.
 """
 
 from __future__ import annotations
